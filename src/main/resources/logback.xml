@@ -9,12 +9,27 @@
     </encoder>
   </appender>
 
-  <logger name="org.apache.http" level="WARN" />
-  <logger name="net.spy.memcached" level="WARN" />
-  <logger name="com.mchange" level="INFO" />
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>cozybot.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>logs/%d{yyyy-MM-dd}.gz</fileNamePattern>
+      <totalSizeCap>3GB</totalSizeCap>
+      <maxHistory>30</maxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>
+        %date{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+      </pattern>
+    </encoder>
+  </appender>
+
+  <logger name="org.apache.http" level="WARN"/>
+  <logger name="net.spy.memcached" level="WARN"/>
+  <logger name="com.mchange" level="INFO"/>
 
   <root level="INFO">
-    <appender-ref ref="STDOUT" />
+    <appender-ref ref="STDOUT"/>
+    <appender-ref ref="FILE"/>
   </root>
 
 </configuration>

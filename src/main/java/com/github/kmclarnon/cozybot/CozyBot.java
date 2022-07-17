@@ -6,8 +6,11 @@ import com.github.kmclarnon.cozybot.utils.SingletonCloser;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.inject.Inject;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CozyBot {
+  private static final Logger LOG = LoggerFactory.getLogger(CozyBot.class);
   private final JdaDiscordClient discordClient;
   private boolean running;
 
