@@ -1,20 +1,17 @@
 package com.github.kmclarnon.cozybot.discord;
 
-import java.util.Optional;
-
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.github.kmclarnon.cozybot.utils.BotConfig;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
+import java.util.Optional;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class DiscordEventListener extends ListenerAdapter {
@@ -36,7 +33,7 @@ public class DiscordEventListener extends ListenerAdapter {
 
     Optional<MessageChannel> landingChannel = client.findGuildChannelByName(
       event.getGuild(),
-        config.getLandingChannel()
+      config.getLandingChannel()
     );
     if (!landingChannel.isPresent()) {
       LOG.error("Failed to find {}!", config.getLandingChannel());
@@ -70,7 +67,10 @@ public class DiscordEventListener extends ListenerAdapter {
     if (readme.isPresent()) {
       return String.format("<#%s>", readme.get().getId());
     } else {
-      LOG.warn("Failed to find {} channel to link, falling back on simple text", channelName);
+      LOG.warn(
+        "Failed to find {} channel to link, falling back on simple text",
+        channelName
+      );
       return String.format("#%s", channelName);
     }
   }
