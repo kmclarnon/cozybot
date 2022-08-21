@@ -6,8 +6,13 @@ import com.google.inject.Singleton;
 import java.util.Optional;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.entities.emoji.EmojiUnion;
+import net.dv8tion.jda.api.entities.emoji.UnicodeEmoji;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -16,6 +21,7 @@ import org.slf4j.LoggerFactory;
 @Singleton
 public class DiscordEventListener extends ListenerAdapter {
   private static final Logger LOG = LoggerFactory.getLogger(DiscordEventListener.class);
+  private static final UnicodeEmoji PIN_EMOJI = Emoji.fromUnicode("U+1f4cc");
   private final DiscordClient client;
   private final BotConfig config;
 
@@ -58,8 +64,63 @@ public class DiscordEventListener extends ListenerAdapter {
   }
 
   @Override
-  public void onMessageReceived(@NotNull MessageReceivedEvent event) {
-    super.onMessageReceived(event);
+  public void onMessageReactionAdd(@NotNull MessageReactionAddEvent event) {
+    if (isPinEmoji(event.getEmoji())) {
+      event
+        .retrieveMessage()
+        .submit()
+        .whenComplete(
+          (m, t) -> {
+            if (t != null) {
+              LOG.error("Failed to fetch message for id: {}", event.getMessageId(), t);
+            } else if (!m.isPinned()) {
+              LOG.debug("Pinning message: {}", m.getId());
+              m
+                .pin()
+                .queue(
+                  res ->
+                    LOG.debug("Message {} pinned successfully", event.getMessageId()),
+                  res -> LOG.error("Failed to pin message {}", event.getMessageId())
+                );
+            }
+          }
+        )
+        .join();
+    }
+  }
+
+  @Override
+  public void onMessageReactionRemove(@NotNull MessageReactionRemoveEvent event) {
+    if (isPinEmoji(event.getEmoji())) {
+      event
+        .retrieveMessage()
+        .submit()
+        .whenComplete(
+          (m, t) -> {
+            if (t != null) {
+              LOG.error("Failed to fetch message for id: {}", event.getMessageId(), t);
+            } else if (m.isPinned()) {
+              MessageReaction pins = m.getReaction(PIN_EMOJI);
+              if (pins != null && pins.getCount() > 0) {
+                LOG.debug(
+                  "Message {} has remaining pins, skipping unpin",
+                  event.getMessageId()
+                );
+              } else {
+                LOG.debug("Unpinning message {}", event.getMessageId());
+                m
+                  .unpin()
+                  .queue(
+                    res ->
+                      LOG.debug("Message {} unpinned successfully", event.getMessageId()),
+                    res -> LOG.error("Failed to unpin message {}", event.getMessageId())
+                  );
+              }
+            }
+          }
+        )
+        .join();
+    }
   }
 
   private String getChannelLink(Guild guild, String channelName) {
@@ -73,5 +134,9 @@ public class DiscordEventListener extends ListenerAdapter {
       );
       return String.format("#%s", channelName);
     }
+  }
+
+  private boolean isPinEmoji(EmojiUnion emojiUnion) {
+    return PIN_EMOJI.equals(emojiUnion);
   }
 }
